@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -7,15 +8,15 @@ namespace Shipwreck.VB6Models.Forms
     {
         #region Properties
 
-        private Dictionary<string, string> _Properties;
+        private Dictionary<string, object> _Properties;
 
-        public Dictionary<string, string> Properties
-            => _Properties ?? (_Properties = new Dictionary<string, string>());
+        public Dictionary<string, object> Properties
+            => _Properties ?? (_Properties = new Dictionary<string, object>());
 
-        public string GetProperty([CallerMemberName]string name = null)
+        public object GetProperty([CallerMemberName]string name = null)
             => _Properties != null && _Properties.TryGetValue(name, out var v) ? v : null;
 
-        public void SetProperty(string value, [CallerMemberName]string name = null)
+        public void SetProperty(object value, [CallerMemberName]string name = null)
         {
             if (value != null)
             {
@@ -27,23 +28,39 @@ namespace Shipwreck.VB6Models.Forms
             }
         }
 
+        public string GetPropertyAsString([CallerMemberName]string name = null)
+            => GetProperty(name)?.ToString();
+
         public int? GetPropertyAsInt32([CallerMemberName]string name = null)
-            => int.TryParse(GetProperty(name), out var i) ? (int?)i : null;
+        {
+            var v = GetProperty(name);
+            return v is int i ? i
+                    : v is IConvertible c && !(v is string) ? c.ToInt32(null)
+                    : int.TryParse(v?.ToString(), out i) ? (int?)i : null;
+        }
 
         public float? GetPropertyAsIntSingle([CallerMemberName]string name = null)
-            => float.TryParse(GetProperty(name), out var f) ? (float?)f : null;
+        {
+            var v = GetProperty(name);
+            return v is float f ? f
+                    : v is IConvertible c && !(v is string) ? c.ToSingle(null)
+                    : float.TryParse(v?.ToString(), out f) ? (float?)f : null;
+        }
 
         public bool? GetPropertyAsIntBoolean([CallerMemberName]string name = null)
-            => int.TryParse(GetProperty(name), out var b) ? (bool?)(b != 0) : null;
+        {
+            var v = GetProperty(name);
+            return v is bool b ? b
+                    : v is IConvertible c && !(v is string) ? c.ToSingle(null) != 0
+                    : float.TryParse(v?.ToString(), out var f) ? (f != 0)
+                    : bool.TryParse(v?.ToString(), out b) ? (bool?)b : null;
+        }
 
-        public void SetProperty(int? value, [CallerMemberName]string name = null)
-            => SetProperty(value?.ToString("D"), name);
-
-        public void SetProperty(float? value, [CallerMemberName]string name = null)
-            => SetProperty(value?.ToString("R"), name);
+        public Color? GetPropertyAsIntColor([CallerMemberName]string name = null)
+            => GetProperty(name) is Color f ? (Color?)f : null;
 
         public void SetProperty(bool? value, [CallerMemberName]string name = null)
-            => SetProperty(value == null ? null : value.Value ? "-1" : "0", name);
+            => SetProperty(value == null ? null : value.Value ? (int?)-1 : 0, name);
 
         #endregion Properties
 

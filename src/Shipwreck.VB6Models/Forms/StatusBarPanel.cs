@@ -12,7 +12,7 @@ namespace Shipwreck.VB6Models.Forms
 
         public string Text
         {
-            get => GetProperty();
+            get => GetPropertyAsString();
             set => SetProperty(value);
         }
 

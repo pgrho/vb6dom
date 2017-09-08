@@ -5,7 +5,7 @@ namespace Shipwreck.VB6Models.Forms
     {
         public string Caption
         {
-            get => GetProperty();
+            get => GetPropertyAsString();
             set => SetProperty(value);
         }
 
@@ -42,7 +42,7 @@ namespace Shipwreck.VB6Models.Forms
 
         public string LinkTopic
         {
-            get => GetProperty();
+            get => GetPropertyAsString();
             set => SetProperty(value);
         }
 

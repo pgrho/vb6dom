@@ -4,7 +4,7 @@ namespace Shipwreck.VB6Models.Forms
     public sealed class StatusBar : Control
     {
         // 2  '下揃え
-        public int? ForeColor
+        public int? Alignment
         {
             get => GetPropertyAsInt32();
             set => SetProperty(value);

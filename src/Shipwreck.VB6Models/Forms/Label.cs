@@ -16,9 +16,9 @@ namespace Shipwreck.VB6Models.Forms
             set => SetProperty(value);
         }
 
-        public int? BackColor
+        public Color? BackColor
         {
-            get => GetPropertyAsInt32();
+            get => GetPropertyAsIntColor();
             set => SetProperty(value);
         }
 
@@ -31,13 +31,13 @@ namespace Shipwreck.VB6Models.Forms
 
         public string Caption
         {
-            get => GetProperty();
+            get => GetPropertyAsString();
             set => SetProperty(value);
         }
 
-        public int? ForeColor
+        public Color? ForeColor
         {
-            get => GetPropertyAsInt32();
+            get => GetPropertyAsIntColor();
             set => SetProperty(value);
         }
     }
