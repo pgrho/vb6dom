@@ -36,7 +36,7 @@ namespace Shipwreck.VB6Models.Parsing
                     case "property":
                     case "get":
                     case "set":
-                    case "ret":
+                    case "let":
 
                     case "private":
                     case "public":
@@ -60,6 +60,7 @@ namespace Shipwreck.VB6Models.Parsing
                     case "until":
                     case "loop":
                     case "for":
+                    case "each":
                     case "to":
                     case "step":
                     case "next":
@@ -83,5 +84,8 @@ namespace Shipwreck.VB6Models.Parsing
         public int Line { get; }
         public int Column { get; }
         public string Text { get; }
+
+        public override string ToString()
+            => Text;
     }
 }

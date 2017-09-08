@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Shipwreck.VB6Models.Parsing
@@ -49,7 +50,7 @@ namespace Shipwreck.VB6Models.Parsing
 
             var s = TokenType.Default;
             var tokenStart = 0;
-            for (var j = 0; j < l.Length; j++)
+            for (var j = 0; l != null && j < l.Length; j++)
             {
                 var c = l[j];
 
@@ -73,6 +74,8 @@ namespace Shipwreck.VB6Models.Parsing
                             case '\\':
                             case '^':
                             case ':':
+                            case ';':
+                            case ',':
                             case '$': // For Unicode .frx reference
                                 _TokenList.Add(new Token(TokenType.Operator, _LineIndex, j, c));
                                 tokenStart = j + 1;
@@ -110,6 +113,7 @@ namespace Shipwreck.VB6Models.Parsing
                                 if (j + 1 < l.Length && char.ToUpper(l[j + 1]) == 'H')
                                 {
                                     tokenStart = j;
+                                    _Buffer.Append("&H");
                                     s = TokenType.Integer;
                                     j++;
                                 }
@@ -156,10 +160,20 @@ namespace Shipwreck.VB6Models.Parsing
                                 break;
 
                             case '_':
-                                l = _Reader.ReadLine();
-                                _LineIndex++;
-                                j = -1;
-                                tokenStart = 0;
+                                if (j + 1 == l.Length || l.Skip(j + 1).All(nc => char.IsWhiteSpace(nc)))
+                                {
+                                    // Line Continuation
+                                    l = _Reader.ReadLine();
+                                    _LineIndex++;
+                                    j = -1;
+                                    tokenStart = 0;
+                                }
+                                else
+                                {
+                                    tokenStart = j;
+                                    s = TokenType.Identifier;
+                                    _Buffer.Append(c);
+                                }
                                 break;
 
                             default:
@@ -179,7 +193,7 @@ namespace Shipwreck.VB6Models.Parsing
                                 j++;
                                 break;
                             }
-                            EndToken(ref s, ref tokenStart, j);
+                            EndTokenWithoutCurrent(ref s, ref tokenStart, j);
                         }
                         else
                         {
@@ -188,7 +202,9 @@ namespace Shipwreck.VB6Models.Parsing
                         break;
 
                     case TokenType.Integer:
-                        if ('0' <= c && c <= '9')
+                        if (('0' <= c && c <= '9')
+                            || ('A' <= c && c <= 'F')
+                            || ('a' <= c && c <= 'f'))
                         {
                             _Buffer.Append(c);
                         }
@@ -199,11 +215,11 @@ namespace Shipwreck.VB6Models.Parsing
                         }
                         else if (IsTypeSuffix(c))
                         {
-                            EndToken(ref s, ref tokenStart, j);
+                            EndTokenWithCurrent(ref s, ref tokenStart, j, c);
                         }
                         else
                         {
-                            EndTokenAndRepeat(ref s, ref tokenStart, ref j);
+                            EndTokenAndRepeatCurrent(ref s, ref tokenStart, ref j);
                         }
                         break;
 
@@ -214,18 +230,18 @@ namespace Shipwreck.VB6Models.Parsing
                         }
                         else if (IsTypeSuffix(c))
                         {
-                            EndToken(ref s, ref tokenStart, j);
+                            EndTokenWithCurrent(ref s, ref tokenStart, j, c);
                         }
                         else
                         {
-                            EndTokenAndRepeat(ref s, ref tokenStart, ref j);
+                            EndTokenAndRepeatCurrent(ref s, ref tokenStart, ref j);
                         }
                         break;
 
                     case TokenType.Date:
                         if (c == '#')
                         {
-                            EndToken(ref s, ref tokenStart, j);
+                            EndTokenWithoutCurrent(ref s, ref tokenStart, j);
                         }
                         else
                         {
@@ -236,7 +252,7 @@ namespace Shipwreck.VB6Models.Parsing
                     case TokenType.Guid:
                         if (c == '}')
                         {
-                            EndToken(ref s, ref tokenStart, j);
+                            EndTokenWithoutCurrent(ref s, ref tokenStart, j);
                         }
                         else
                         {
@@ -254,7 +270,7 @@ namespace Shipwreck.VB6Models.Parsing
                         }
                         else
                         {
-                            EndTokenAndRepeat(ref s, ref tokenStart, ref j);
+                            EndTokenAndRepeatCurrent(ref s, ref tokenStart, ref j);
                         }
                         break;
 
@@ -282,12 +298,16 @@ namespace Shipwreck.VB6Models.Parsing
             return true;
         }
 
-        private static bool IsTypeSuffix(char c)
+        private void EndTokenWithCurrent(ref TokenType s, ref int tokenStart, int j, char c)
         {
-            return c == '%' || c == '&' || c == '!' || c == '#' || c == '@';
+            _Buffer.Append(c);
+            EndTokenWithoutCurrent(ref s, ref tokenStart, j);
         }
 
-        private void EndToken(ref TokenType s, ref int tokenStart, int j)
+        private static bool IsTypeSuffix(char c)
+            => c == '%' || c == '&' || c == '!' || c == '#' || c == '@';
+
+        private void EndTokenWithoutCurrent(ref TokenType s, ref int tokenStart, int j)
         {
             _TokenList.Add(new Token(s, _LineIndex, tokenStart, _Buffer.ToString()));
             _Buffer.Clear();
@@ -295,7 +315,7 @@ namespace Shipwreck.VB6Models.Parsing
             tokenStart = j + 1;
         }
 
-        private void EndTokenAndRepeat(ref TokenType s, ref int tokenStart, ref int j)
+        private void EndTokenAndRepeatCurrent(ref TokenType s, ref int tokenStart, ref int j)
         {
             _TokenList.Add(new Token(s, _LineIndex, tokenStart, _Buffer.ToString()));
             _Buffer.Clear();
