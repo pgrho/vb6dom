@@ -304,8 +304,8 @@ namespace Shipwreck.VB6Models.Parsing
             EndTokenWithoutCurrent(ref s, ref tokenStart, j);
         }
 
-        private static bool IsTypeSuffix(char c)
-            => c == '%' || c == '&' || c == '!' || c == '#' || c == '@';
+        internal static bool IsTypeSuffix(char c)
+            => c == '%' || c == '&' || c == '$' || c == '!' || c == '#' || c == '@';
 
         private void EndTokenWithoutCurrent(ref TokenType s, ref int tokenStart, int j)
         {

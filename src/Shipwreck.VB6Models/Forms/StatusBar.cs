@@ -1,6 +1,5 @@
 namespace Shipwreck.VB6Models.Forms
 {
-    [FormType("MSComctlLib.StatusBar")]
     public sealed class StatusBar : Control
     {
         // 2  '下揃え

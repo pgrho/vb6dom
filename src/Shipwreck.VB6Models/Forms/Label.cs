@@ -1,6 +1,5 @@
 namespace Shipwreck.VB6Models.Forms
 {
-    [FormType("VB.Label")]
     public sealed class Label : Control
     {
         // 2  '中央揃え

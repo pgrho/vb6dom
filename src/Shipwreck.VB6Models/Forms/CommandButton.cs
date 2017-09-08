@@ -1,6 +1,5 @@
 namespace Shipwreck.VB6Models.Forms
-{
-    [FormType("VB.CommandButton")]
+{ 
     public sealed class CommandButton : Control
     {
         public string Caption

@@ -1,6 +1,5 @@
 namespace Shipwreck.VB6Models.Forms
 {
-    [FormType("VB.Form")]
     public sealed class Form : ContainerControl
     {
         public string Caption

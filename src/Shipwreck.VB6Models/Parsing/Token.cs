@@ -1,3 +1,6 @@
+using System;
+using System.Globalization;
+
 namespace Shipwreck.VB6Models.Parsing
 {
     public sealed class Token
@@ -37,6 +40,7 @@ namespace Shipwreck.VB6Models.Parsing
                     case "get":
                     case "set":
                     case "let":
+                    case "declare":
 
                     case "private":
                     case "public":
@@ -66,6 +70,8 @@ namespace Shipwreck.VB6Models.Parsing
                     case "next":
                     case "exit":
 
+                    case "nothing":
+
                         Type = TokenType.Keyword;
                         break;
                 }
@@ -87,5 +93,77 @@ namespace Shipwreck.VB6Models.Parsing
 
         public override string ToString()
             => Text;
+
+        public object GetValue()
+        {
+            switch (Type)
+            {
+                case TokenType.Keyword:
+                    if (Text.EqualsIgnoreCase("Nothing"))
+                    {
+                        return null;
+                    }
+                    break;
+
+                case TokenType.Boolean:
+                    return Text.EqualsIgnoreCase("True");
+
+                case TokenType.Integer:
+                    {
+                        var suffix = TokenParser.IsTypeSuffix(Text.Last()) ? Text.Last() : '\0';
+                        var li = suffix == '\0' ? Text.Length : (Text.Length - 1);
+
+                        int si;
+                        NumberStyles st;
+
+                        if (Text[0] == '&')
+                        {
+                            si = 2;
+                            st = NumberStyles.HexNumber;
+                        }
+                        else
+                        {
+                            si = 0;
+                            st = NumberStyles.Integer;
+                        }
+
+                        if (long.TryParse(Text.Substring(si, li - si), st, null, out var l))
+                        {
+                            return ConvertBySuffix(l, suffix, typeof(short));
+                        }
+                        break;
+                    }
+
+                case TokenType.Float:
+                    {
+                        var suffix = TokenParser.IsTypeSuffix(Text.Last()) ? Text.Last() : '\0';
+                        var li = suffix == '\0' ? Text.Length : (Text.Length - 1);
+
+                        if (double.TryParse(Text.Substring(0, li), out var l))
+                        {
+                            return ConvertBySuffix(l, suffix, typeof(float));
+                        }
+                        break;
+                    }
+
+                case TokenType.Guid:
+                    if (Guid.TryParse(Text, out var guid))
+                    {
+                        return guid;
+                    }
+                    break;
+            }
+            return Text;
+        }
+
+        private static object ConvertBySuffix(IConvertible l, char suffix, Type defaultType)
+            => l.ToType(
+                    suffix == '%' ? typeof(int)
+                    : suffix == '&' ? typeof(int)
+                    : suffix == '!' ? typeof(float)
+                    : suffix == '#' ? typeof(double)
+                    : suffix == '@' ? typeof(decimal)
+                    : suffix == '$' ? typeof(string)
+                    : defaultType, null);
     }
 }
