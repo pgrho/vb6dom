@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
-using System.Reflection;
+using System.Text.RegularExpressions;
 using Shipwreck.VB6Models.Forms;
 
 namespace Shipwreck.VB6Models.Parsing
@@ -55,6 +56,7 @@ namespace Shipwreck.VB6Models.Parsing
                             {
                                 TypeName = tn
                             };
+                            control.Name = nt.Text;
 
                             return true;
                         }
@@ -112,6 +114,125 @@ namespace Shipwreck.VB6Models.Parsing
                         }
                     }
                     break;
+            }
+
+            for (var i = 0; i + 2 < tokens.Count; i += 2)
+            {
+                var it = tokens[i];
+
+                if (it.Type != TokenType.Identifier)
+                {
+                    break;
+                }
+
+                var nt = tokens[i + 1];
+
+                if (nt.Type != TokenType.Operator)
+                {
+                    break;
+                }
+
+                switch (nt.Text)
+                {
+                    case ".":
+                        continue;
+
+                    case "=":
+
+                        var name = string.Concat(tokens.Take(i + 1).Select(t => t.Text));
+                        var vt = tokens[i + 2];
+
+                        switch (vt.Type)
+                        {
+                            case TokenType.Operator:
+                                switch (vt.Text)
+                                {
+                                    case "-":
+                                        if (tokens.Count > i + 3
+                                            && (tokens[i + 3].Type == TokenType.Integer || tokens[i + 3].Type == TokenType.Float))
+                                        {
+                                            if (tokens[i + 3].Text != "0"
+                                                && tokens.Count == i + 4
+                                                && Regex.IsMatch(@"'\s*[Tt]rue\s$", tokens[i + 4].Text))
+                                            {
+                                                _Object.SetProperty(true, name);
+                                            }
+                                            else
+                                            {
+                                                var v = tokens[i + 3].GetValue();
+                                                if (v is int iv)
+                                                {
+                                                    _Object.SetProperty(-iv, name);
+                                                }
+                                                else if (v is long lv)
+                                                {
+                                                    _Object.SetProperty(-lv, name);
+                                                }
+                                                else if (v is float sv)
+                                                {
+                                                    _Object.SetProperty(-sv, name);
+                                                }
+                                                else if (v is double dv)
+                                                {
+                                                    _Object.SetProperty(-dv, name);
+                                                }
+                                                else
+                                                {
+                                                    _Object.SetProperty(-((IConvertible)v).ToDecimal(null), name);
+                                                }
+                                            }
+                                            return true;
+                                        }
+                                        break;
+
+                                    case "$":
+                                        if (tokens.Count >= i + 5
+                                            && tokens[i + 3].Type == TokenType.String
+                                            && tokens[i + 4].Text == ":"
+                                            && int.TryParse(tokens[i + 4].Text, NumberStyles.HexNumber, null, out var h2))
+                                        {
+                                            // TODO: read binary and to string
+
+                                            return true;
+                                        }
+                                        break;
+                                }
+                                break;
+
+                            case TokenType.String:
+                                if (tokens.Count >= i + 4
+                                    && tokens[i + 3].Text == ":"
+                                    && int.TryParse(tokens[i + 4].Text, NumberStyles.HexNumber, null, out var h))
+                                {
+                                    // TODO: read binary
+
+                                    return true;
+                                }
+                                else
+                                {
+                                    _Object.SetProperty(vt.Text, name);
+                                    return true;
+                                }
+
+                            case TokenType.Integer:
+                                if (vt.Text == "0"
+                                    && tokens.Count == i + 3
+                                    && Regex.IsMatch(@"'\s*[Ff]alse\s$", tokens[i + 3].Text))
+                                {
+                                    _Object.SetProperty(false, name);
+                                }
+                                else
+                                {
+                                    _Object.SetProperty(vt.GetValue(), name);
+                                }
+                                return true;
+
+                            case TokenType.Float:
+                                _Object.SetProperty(vt.GetValue(), name);
+                                return true;
+                        }
+                        break;
+                }
             }
 
             reader.OnUnknownTokens(this, tokens);

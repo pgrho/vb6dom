@@ -15,6 +15,15 @@ namespace Shipwreck.VB6Models.Parsing
             Assert.Equal("5.00", sfr.Version);
 
             var frm = Assert.IsType<Form>(sfr.FormObjects.Single());
+
+            Assert.Equal("Form1", frm.Name);
+            Assert.Equal("Form Title", frm.Caption);
+            Assert.Equal(4170, frm.ClientWidth);
+            Assert.Equal(1905, frm.ClientHeight);
+            Assert.Equal(45, frm.ClientLeft);
+            Assert.Equal(330, frm.ClientTop);
+
+            Assert.Equal("MS UI Gothic", frm.Font.Name);
         }
     }
 }
