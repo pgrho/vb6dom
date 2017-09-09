@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Shipwreck.VB6Models.Forms;
+﻿using Shipwreck.VB6Models.Declarations;
 using Xunit;
 
 namespace Shipwreck.VB6Models.Parsing
@@ -10,11 +9,11 @@ namespace Shipwreck.VB6Models.Parsing
         public void Form1Test()
         {
             var sfr = new SourceFileReader("Parsing\\Form1.frm");
-            sfr.Load();
+            var m = sfr.Load();
 
-            Assert.Equal("5.00", sfr.Version);
+            Assert.Equal("5.00", m.Version);
 
-            var frm = Assert.IsType<Form>(sfr.FormObjects.Single());
+            var frm = Assert.IsType<FormModule>(m).Form;
 
             Assert.Equal("Form1", frm.Name);
             Assert.Equal("Form Title", frm.Caption);

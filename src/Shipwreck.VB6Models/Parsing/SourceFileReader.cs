@@ -3,11 +3,64 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Shipwreck.VB6Models.Declarations;
 using Shipwreck.VB6Models.Forms;
 
 namespace Shipwreck.VB6Models.Parsing
 {
-    public sealed class SourceFileReader : ISourceReadingState
+    internal sealed class ModuleReadingState : ISourceReadingState
+    {
+        private readonly ModuleBase _Module;
+
+        public ModuleReadingState(ModuleBase module)
+        {
+            _Module = module;
+        }
+
+        public bool Accept(SourceFileReader reader, IReadOnlyList<Token> tokens)
+        {
+            var ft = tokens.First();
+
+            switch (ft.Type)
+            {
+                case TokenType.Identifier:
+                    if ("VERSION".EqualsIgnoreCase(ft.Text))
+                    {
+                        if (tokens.Count == 2)
+                        {
+                            _Module.Version = tokens[1].Text;
+                            return true;
+                        }
+                    }
+                    else if ("Attribute".EqualsIgnoreCase(ft.Text))
+                    {
+                    }
+                    break;
+
+                case TokenType.Keyword:
+                    if (FormReadingState.TryCreateControl(tokens, out var c))
+                    {
+                        ((FormModule)_Module).Form = (Form)c;
+                        reader.Push(new FormReadingState(c));
+                        return true;
+                    }
+                    else if (tokens.Any(t => t.Type == TokenType.Keyword && t.Text.EqualsIgnoreCase("Declare")))
+                    {
+                    }
+                    else if (tokens.Any(t => t.Type == TokenType.Keyword && t.Text.EqualsIgnoreCase("Sub", "Function", "Property")))
+                    {
+                    }
+
+                    break;
+            }
+
+            reader.OnUnknownTokens(this, tokens);
+
+            return true;
+        }
+    }
+
+    public sealed class SourceFileReader
     {
         private Stack<ISourceReadingState> _States;
 
@@ -18,19 +71,31 @@ namespace Shipwreck.VB6Models.Parsing
 
         public string FileName { get; }
 
-        public string Version { get; private set; }
-
-        private List<FormObject> _FormObjects;
-
-        public List<FormObject> FormObjects
-            => _FormObjects ?? (_FormObjects = new List<FormObject>());
-
         internal Encoding Encoding { get; private set; }
 
-        public void Load()
+        public ModuleBase Load()
         {
+            ModuleBase m;
+            switch (Path.GetExtension(FileName).ToLowerInvariant())
+            {
+                case ".frm":
+                    m = new FormModule();
+                    break;
+
+                case ".cls":
+                    m = new ClassModule();
+                    break;
+
+                case ".bas":
+                    m = new StandardModule();
+                    break;
+
+                default:
+                    throw new NotSupportedException();
+            }
+
             _States = new Stack<ISourceReadingState>();
-            _States.Push(this);
+            _States.Push(new ModuleReadingState(m));
 
             using (var sr = new StreamReader(FileName))
             using (var tp = new TokenParser(sr))
@@ -52,6 +117,8 @@ namespace Shipwreck.VB6Models.Parsing
             }
 
             _States = null;
+
+            return m;
         }
 
         internal byte[] ReadBinary(string frxName, int offset)
@@ -69,47 +136,5 @@ namespace Shipwreck.VB6Models.Parsing
 
         internal void OnUnknownTokens(ISourceReadingState state, IReadOnlyList<Token> tokens)
             => Console.WriteLine("Encountered unknown token sequence in {0}: {1}", state, string.Concat(tokens.Select(t => $"{t.Text}({t.Type})")));
-
-        bool ISourceReadingState.Accept(SourceFileReader reader, IReadOnlyList<Token> tokens)
-        {
-            var ft = tokens.First();
-
-            switch (ft.Type)
-            {
-                case TokenType.Identifier:
-                    if ("VERSION".EqualsIgnoreCase(ft.Text))
-                    {
-                        if (tokens.Count == 2)
-                        {
-                            Version = tokens[1].Text;
-                            return true;
-                        }
-                    }
-                    else if ("Attribute".EqualsIgnoreCase(ft.Text))
-                    {
-                    }
-                    break;
-
-                case TokenType.Keyword:
-                    if (FormReadingState.TryCreateControl(tokens, out var c))
-                    {
-                        FormObjects.Add(c);
-                        Push(new FormReadingState(c));
-                        return true;
-                    }
-                    else if (tokens.Any(t => t.Type == TokenType.Keyword && t.Text.EqualsIgnoreCase("Declare")))
-                    {
-                    }
-                    else if (tokens.Any(t => t.Type == TokenType.Keyword && t.Text.EqualsIgnoreCase("Sub", "Function", "Property")))
-                    {
-                    }
-
-                    break;
-            }
-
-            OnUnknownTokens(this, tokens);
-
-            return true;
-        }
     }
 }
