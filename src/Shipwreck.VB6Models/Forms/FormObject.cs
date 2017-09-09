@@ -64,18 +64,6 @@ namespace Shipwreck.VB6Models.Forms
 
         #endregion Properties
 
-        #region BinaryResources
-
-        private Dictionary<string, byte[]> _BinaryResources;
-
-        public Dictionary<string, byte[]> BinaryResources
-            => _BinaryResources ?? (_BinaryResources = new Dictionary<string, byte[]>());
-
-        public byte[] GetResource([CallerMemberName]string name = null)
-            => _BinaryResources != null && _BinaryResources.TryGetValue(name, out var v) ? v : null;
-
-        #endregion BinaryResources
-
         #region ObjectProperties
 
         private Dictionary<string, FormObject> _ObjectProperties;

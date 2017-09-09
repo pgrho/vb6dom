@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using Shipwreck.VB6Models.Forms;
 
@@ -193,6 +194,8 @@ namespace Shipwreck.VB6Models.Parsing
                                         {
                                             // TODO: read binary and to string
 
+                                            _Object.SetProperty((reader.Encoding ?? Encoding.Default).GetString(reader.ReadBinary(tokens[i + 3].Text, h2)), name);
+
                                             return true;
                                         }
                                         break;
@@ -204,7 +207,7 @@ namespace Shipwreck.VB6Models.Parsing
                                     && tokens[i + 3].Text == ":"
                                     && int.TryParse(tokens[i + 4].Text, NumberStyles.HexNumber, null, out var h))
                                 {
-                                    // TODO: read binary
+                                    _Object.SetProperty(reader.ReadBinary(vt.Text, h), name);
 
                                     return true;
                                 }

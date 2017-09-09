@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
+using System.Text;
 using Shipwreck.VB6Models.Forms;
 
 namespace Shipwreck.VB6Models.Parsing
@@ -25,6 +25,8 @@ namespace Shipwreck.VB6Models.Parsing
         public List<FormObject> FormObjects
             => _FormObjects ?? (_FormObjects = new List<FormObject>());
 
+        internal Encoding Encoding { get; private set; }
+
         public void Load()
         {
             _States = new Stack<ISourceReadingState>();
@@ -33,6 +35,8 @@ namespace Shipwreck.VB6Models.Parsing
             using (var sr = new StreamReader(FileName))
             using (var tp = new TokenParser(sr))
             {
+                Encoding = sr.CurrentEncoding;
+
                 while (_States.Any() && tp.Read())
                 {
                     if (!tp.Tokens.Any())
@@ -48,6 +52,16 @@ namespace Shipwreck.VB6Models.Parsing
             }
 
             _States = null;
+        }
+
+        internal byte[] ReadBinary(string frxName, int offset)
+        {
+            using (var fs = new FileStream(new Uri(new Uri(FileName), frxName).LocalPath, FileMode.Open))
+            using (var br = new BinaryReader(fs))
+            {
+                var length = br.ReadInt32();
+                return br.ReadBytes(length);
+            }
         }
 
         internal void Push(ISourceReadingState state)
