@@ -69,6 +69,14 @@ namespace Shipwreck.VB6Models.Parsing
             {
                 return VB6Types.Currency;
             }
+            if (type.EqualsIgnoreCase("String"))
+            {
+                return VB6Types.String;
+            }
+            //if (type.EqualsIgnoreCase("Date"))
+            //{
+            //    return VB6Types.Date;
+            //}
             throw new Exception();
         }
 

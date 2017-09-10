@@ -29,48 +29,6 @@ namespace Shipwreck.VB6Models.Parsing
             Assert.Equal("MS UI Gothic", frm.Font.Name);
         }
 
-        [Fact]
-        public void Form1Test_Const1()
-        {
-            var cnst = Form1.Declarations.OfType<ConstantDeclaration>().Single(c => c.Name == "const1");
-            Assert.Null(cnst.IsPublic);
-        }
-
-        [Fact]
-        public void Form1Test_Const2()
-        {
-            var cnst = Form1.Declarations.OfType<ConstantDeclaration>().Single(c => c.Name == "const2");
-            Assert.Equal(false, cnst.IsPublic);
-        }
-
-        [Fact]
-        public void Form1Test_Const3()
-        {
-            var cnst = Form1.Declarations.OfType<ConstantDeclaration>().Single(c => c.Name == "const3");
-            Assert.Equal(true, cnst.IsPublic);
-        }
-
-        [Fact]
-        public void Form1Test_Const4()
-        {
-            var cnst = Form1.Declarations.OfType<ConstantDeclaration>().Single(c => c.Name == "const4");
-            Assert.Null(cnst.IsPublic);
-        }
-
-        [Fact]
-        public void Form1Test_Const5()
-        {
-            var cnst = Form1.Declarations.OfType<ConstantDeclaration>().Single(c => c.Name == "const5");
-            Assert.Null(cnst.IsPublic);
-        }
-
-        [Fact]
-        public void Form1Test_Const6()
-        {
-            var cnst = Form1.Declarations.OfType<ConstantDeclaration>().Single(c => c.Name == "const6");
-            Assert.Null(cnst.IsPublic);
-        }
-
         #endregion Form1
     }
 }

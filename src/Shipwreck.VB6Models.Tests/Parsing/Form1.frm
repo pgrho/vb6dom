@@ -22,10 +22,3 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit On
-
-Const const1 = 1
-Private Const const2 = 2
-Public Const const3 = 3
-Const const4& = 4
-Const const5 As Double = 5
-Const const6 As Integer = -6

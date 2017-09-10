@@ -10,10 +10,14 @@
 
   <ItemGroup>
     <None Remove="Parsing\Form1.frm" />
+    <None Remove="Parsing\Module1.bas" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="Parsing\Form1.frm">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Parsing\Module1.bas">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

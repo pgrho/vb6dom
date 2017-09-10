@@ -50,10 +50,30 @@ namespace Shipwreck.VB6Models.Parsing
                     }
                     else if (TryCreateConstantDeclaration(tokens, out var cd))
                     {
+                        // TODO: split by comma
                         _Module.Declarations.Add(cd);
+
+                        return true;
                     }
-                    else
+                    else if (ft.IsKeywordOf("Public") || ft.IsKeywordOf("Private") || ft.IsKeywordOf("Dim"))
                     {
+                        var i = 1;
+                        if (TryReadParameters(tokens, ref i, false, out var ps))
+                        {
+                            var isPublic = char.ToLowerInvariant(ft.Text[1]) == 'u';
+
+                            foreach (var p in ps)
+                            {
+                                _Module.Declarations.Add(new FieldDeclaration()
+                                {
+                                    IsPublic = isPublic,
+                                    Name = p.Name,
+                                    Type = p.ParameterType
+                                });
+                            }
+
+                            return true;
+                        }
                     }
 
                     break;
@@ -205,6 +225,7 @@ namespace Shipwreck.VB6Models.Parsing
 
                 if (comma.IsOperatorOf(","))
                 {
+                    i++;
                     continue;
                 }
                 else
