@@ -104,14 +104,14 @@ namespace Shipwreck.VB6Models.Parsing
                     {
                         if (_IsControl)
                         {
-                            return true;
+                            return false;
                         }
                     }
                     else if (ft.Text.EqualsIgnoreCase("EndProperty"))
                     {
                         if (!_IsControl)
                         {
-                            return true;
+                            return false;
                         }
                     }
                     break;
@@ -160,27 +160,7 @@ namespace Shipwreck.VB6Models.Parsing
                                             }
                                             else
                                             {
-                                                var v = tokens[i + 3].GetValue();
-                                                if (v is int iv)
-                                                {
-                                                    _Object.SetProperty(-iv, name);
-                                                }
-                                                else if (v is long lv)
-                                                {
-                                                    _Object.SetProperty(-lv, name);
-                                                }
-                                                else if (v is float sv)
-                                                {
-                                                    _Object.SetProperty(-sv, name);
-                                                }
-                                                else if (v is double dv)
-                                                {
-                                                    _Object.SetProperty(-dv, name);
-                                                }
-                                                else
-                                                {
-                                                    _Object.SetProperty(-((IConvertible)v).ToDecimal(null), name);
-                                                }
+                                                _Object.SetProperty(tokens[i + 3].GetValue().Negate(), name);
                                             }
                                             return true;
                                         }

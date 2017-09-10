@@ -110,7 +110,7 @@ namespace Shipwreck.VB6Models.Parsing
 
                 case TokenType.Integer:
                     {
-                        var suffix = TokenParser.IsTypeSuffix(Text.Last()) ? Text.Last() : '\0';
+                        var suffix = Text.Last().IsTypeSuffix() ? Text.Last() : '\0';
                         var li = suffix == '\0' ? Text.Length : (Text.Length - 1);
 
                         int si;
@@ -136,7 +136,7 @@ namespace Shipwreck.VB6Models.Parsing
 
                 case TokenType.Float:
                     {
-                        var suffix = TokenParser.IsTypeSuffix(Text.Last()) ? Text.Last() : '\0';
+                        var suffix = Text.Last().IsTypeSuffix() ? Text.Last() : '\0';
                         var li = suffix == '\0' ? Text.Length : (Text.Length - 1);
 
                         if (double.TryParse(Text.Substring(0, li), out var l))

@@ -5,7 +5,7 @@ namespace Shipwreck.VB6Models
     internal static class SH
     {
         public static char Last(this string s)
-            => s?.Length > 0 ? s[0] : '\0';
+            => s?.Length > 0 ? s[s.Length - 1] : '\0';
 
         public static bool EqualsIgnoreCase(this string s, string other)
             => s?.Equals(other, StringComparison.OrdinalIgnoreCase) ?? other == null;
