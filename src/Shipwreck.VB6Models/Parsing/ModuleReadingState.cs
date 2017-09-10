@@ -206,7 +206,7 @@ namespace Shipwreck.VB6Models.Parsing
                     var typeName = tokens.ElementAtOrDefault(++i);
                     if (typeName?.Type == TokenType.Identifier)
                     {
-                        elemType = typeName.Text.TypeFromName();
+                        elemType = typeName.Text.TypeFromName() ?? new UnknownType(typeName.Text);
                         comma = tokens.ElementAtOrDefault(++i);
                     }
                     else
@@ -219,7 +219,7 @@ namespace Shipwreck.VB6Models.Parsing
                 {
                     IsByRef = isByRef,
                     Name = name,
-                    ParameterType = isArray ? new ArrayType(elemType) : elemType
+                    ParameterType = isArray ? new ArrayType(elemType ?? VB6Types.Variant) : elemType
                 });
                 last = i - 1;
 

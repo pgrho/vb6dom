@@ -44,41 +44,7 @@ namespace Shipwreck.VB6Models.Parsing
         }
 
         internal static ITypeReference TypeFromName(this string type)
-        {
-            if (type.EqualsIgnoreCase("Boolean"))
-            {
-                return VB6Types.Boolean;
-            }
-            if (type.EqualsIgnoreCase("Integer"))
-            {
-                return VB6Types.Integer;
-            }
-            if (type.EqualsIgnoreCase("Long"))
-            {
-                return VB6Types.Long;
-            }
-            if (type.EqualsIgnoreCase("Single"))
-            {
-                return VB6Types.Single;
-            }
-            if (type.EqualsIgnoreCase("Double"))
-            {
-                return VB6Types.Double;
-            }
-            if (type.EqualsIgnoreCase("Currency"))
-            {
-                return VB6Types.Currency;
-            }
-            if (type.EqualsIgnoreCase("String"))
-            {
-                return VB6Types.String;
-            }
-            //if (type.EqualsIgnoreCase("Date"))
-            //{
-            //    return VB6Types.Date;
-            //}
-            throw new Exception();
-        }
+            => VB6Types.FromName(type);
 
         public static object Negate(this object v)
         {
