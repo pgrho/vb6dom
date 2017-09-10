@@ -93,62 +93,130 @@ namespace Shipwreck.VB6Models.Parsing
                 return false;
             }
 
-            var id = tokens[i++];
-
-            if (id.Type != TokenType.Identifier)
+            if (TryReadParameters(tokens, ref i, false, out var ps)
+                && ps.Count == 1)
             {
-                constantDeclaration = null;
-                return false;
-            }
+                constantDeclaration.Name = ps[0].Name;
+                constantDeclaration.Type = ps[0].ParameterType;
 
-            if (id.Text.Last().IsTypeSuffix())
-            {
-                constantDeclaration.Name = id.Text.Substring(0, id.Text.Length - 1);
-                constantDeclaration.Type = id.Text.Last().TypeFromSuffix();
-            }
-            else
-            {
-                constantDeclaration.Name = id.Text;
-            }
+                var eq = tokens.ElementAtOrDefault(++i);
 
-            var eq = tokens[i];
-
-            if (eq.IsKeywordOf("As") && constantDeclaration.Type == null)
-            {
-                if (i + 1 >= tokens.Count)
+                if (eq.IsOperatorOf("=")
+                    && i + 2 <= tokens.Count
+                    && i + 3 >= tokens.Count)
                 {
-                    constantDeclaration = null;
-                    return false;
+                    var vt = tokens[i + 1];
+
+                    if (vt.IsOperatorOf("-")
+                        && i + 3 == tokens.Count)
+                    {
+                        constantDeclaration.Value = new ConstantExpression(tokens[i + 2].GetValue().Negate());
+                    }
+                    else if (i + 2 == tokens.Count)
+                    {
+                        constantDeclaration.Value = new ConstantExpression(vt.GetValue());
+                    }
+
+                    return true;
                 }
-
-                constantDeclaration.Type = tokens[i + 1].Text.TypeFromName();
-
-                i += 2;
-
-                eq = tokens[i];
-            }
-
-            if (eq.IsOperatorOf("=")
-                && i + 2 <= tokens.Count
-                && i + 3 >= tokens.Count)
-            {
-                var vt = tokens[i + 1];
-
-                if (vt.IsOperatorOf("-")
-                    && i + 3 == tokens.Count)
-                {
-                    constantDeclaration.Value = new ConstantExpression(tokens[i + 2].GetValue().Negate());
-                }
-                else if (i + 2 == tokens.Count)
-                {
-                    constantDeclaration.Value = new ConstantExpression(vt.GetValue());
-                }
-
-                return true;
             }
 
             constantDeclaration = null;
             return false;
+        }
+
+        private bool TryReadParameters(IReadOnlyList<Token> tokens, ref int index, bool allowBy, out List<ParameterDeclaration> parameters)
+        {
+            var i = index;
+            List<ParameterDeclaration> ret = null;
+            var last = index;
+
+            for (; ; )
+            {
+                // (ByVal|ByRef)? id\{suffix} (\(...........\))? (As TypeName)?
+
+                bool? isByRef = null;
+                string name;
+
+                var id = tokens.ElementAtOrDefault(i);
+
+                if (allowBy && (id?.IsKeywordOf("ByVal") ?? id?.IsKeywordOf("ByRef") ?? false))
+                {
+                    isByRef = char.ToLower(id.Text[2]) == 'r';
+                    id = tokens.ElementAtOrDefault(++i);
+                }
+
+                if (id?.Type != TokenType.Identifier)
+                {
+                    break;
+                }
+
+                ITypeReference elemType = null;
+
+                if (id.Text.Last().IsTypeSuffix())
+                {
+                    name = id.Text.Substring(0, id.Text.Length - 1);
+                    elemType = id.Text.Last().TypeFromSuffix();
+                }
+                else
+                {
+                    name = id.Text;
+                }
+
+                var isArray = false;
+
+                var comma = tokens.ElementAtOrDefault(++i);
+                if (comma.IsOperatorOf("("))
+                {
+                    // TODO: array dimension
+                    var next = tokens.ElementAtOrDefault(++i);
+                    if (next.IsOperatorOf(")"))
+                    {
+                        isArray = true;
+                        comma = tokens.ElementAtOrDefault(++i);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                if (elemType == null && comma.IsKeywordOf("As"))
+                {
+                    var typeName = tokens.ElementAtOrDefault(++i);
+                    if (typeName?.Type == TokenType.Identifier)
+                    {
+                        elemType = typeName.Text.TypeFromName();
+                        comma = tokens.ElementAtOrDefault(++i);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                (ret ?? (ret = new List<ParameterDeclaration>())).Add(new ParameterDeclaration()
+                {
+                    IsByRef = isByRef,
+                    Name = name,
+                    ParameterType = isArray ? new ArrayType(elemType) : elemType
+                });
+                last = i - 1;
+
+                if (comma.IsOperatorOf(","))
+                {
+                    continue;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            parameters = ret;
+            index = last;
+
+            return ret != null;
         }
     }
 }

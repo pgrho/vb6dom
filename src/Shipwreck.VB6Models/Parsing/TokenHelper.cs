@@ -12,7 +12,7 @@ namespace Shipwreck.VB6Models.Parsing
             => token.Match(TokenType.Operator, @operator);
 
         public static bool Match(this Token token, TokenType type, string text)
-            => (token.Type & type) != TokenType.Default && token.Text.EqualsIgnoreCase(text);
+            => token != null && (token.Type & type) != TokenType.Default && token.Text.EqualsIgnoreCase(text);
 
         internal static bool IsTypeSuffix(this char c)
             => c == '%' || c == '&' || c == '$' || c == '!' || c == '#' || c == '@';
