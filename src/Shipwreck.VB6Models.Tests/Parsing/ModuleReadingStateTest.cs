@@ -92,6 +92,40 @@ namespace Shipwreck.VB6Models.Parsing
             Assert.Equal(VB6Types.Integer, c.Type);
         }
 
+        [Fact]
+        public void Const7to9Test()
+        {
+            var sm = new StandardModule();
+
+            Assert.True(ModuleReadingState.ConstMatcher.TryMatch(new[] {
+                KW("Const"), ID("const7"), KW("As"), ID("Integer"), OP("="), IN("7"),
+                OP(","), ID("const8"), OP("="), IN("8"),
+                OP(","), ID("const9@"), OP("="), IN("9")
+            }, sm));
+
+            {
+                var c = sm.Declarations.OfType<ConstantDeclaration>().Single(e => e.Name == "const7");
+
+                Assert.Null(c.IsPublic);
+                Assert.Equal("const7", c.Name);
+                Assert.Equal(VB6Types.Integer, c.Type);
+            }
+            {
+                var c = sm.Declarations.OfType<ConstantDeclaration>().Single(e => e.Name == "const8");
+
+                Assert.Null(c.IsPublic);
+                Assert.Equal("const8", c.Name);
+                Assert.Equal(null, c.Type);
+            }
+            {
+                var c = sm.Declarations.OfType<ConstantDeclaration>().Single(e => e.Name == "const9");
+
+                Assert.Null(c.IsPublic);
+                Assert.Equal("const9", c.Name);
+                Assert.Equal(VB6Types.Currency, c.Type);
+            }
+        }
+
         #endregion ConstMatcher
 
         #region Const
@@ -135,6 +169,27 @@ namespace Shipwreck.VB6Models.Parsing
         public void Module1Test_Const6()
         {
             var cnst = Module1.Declarations.OfType<ConstantDeclaration>().Single(c => c.Name == "const6");
+            Assert.Null(cnst.IsPublic);
+        }
+
+        [Fact]
+        public void Module1Test_Const7()
+        {
+            var cnst = Module1.Declarations.OfType<ConstantDeclaration>().Single(c => c.Name == "const7");
+            Assert.Null(cnst.IsPublic);
+        }
+
+        [Fact]
+        public void Module1Test_Const8()
+        {
+            var cnst = Module1.Declarations.OfType<ConstantDeclaration>().Single(c => c.Name == "const8");
+            Assert.Null(cnst.IsPublic);
+        }
+
+        [Fact]
+        public void Module1Test_Const9()
+        {
+            var cnst = Module1.Declarations.OfType<ConstantDeclaration>().Single(c => c.Name == "const9");
             Assert.Null(cnst.IsPublic);
         }
 

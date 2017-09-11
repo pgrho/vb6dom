@@ -6,6 +6,7 @@ Public Const const3 = 3
 Const const4& = 4
 Const const5 As Double = 5
 Const const6 As Integer = -6
+Const const7 As Integer = 7, const8 = 8, const9@ = 9
 
 Public var1
 Private var2

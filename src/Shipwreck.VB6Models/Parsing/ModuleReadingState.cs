@@ -20,36 +20,46 @@ namespace Shipwreck.VB6Models.Parsing
                     = new TokenMatcherBuilder()
                             .ContinueWithOptionalKeyword("isPublic", t => t.Text[1] == 'u' || t.Text[1] == 'U', "Public", "Private")
                             .ContinueWithKeyword("Const")
-                            .ContinueWithIdentifier("id")
-                            //.ContinueWithOptionalGroup("isArray", g => g.ContinueWithOperator("(").ContinueWithOperator(")"))
-                            .ContinueWithOptionalGroup(g => g.ContinueWithKeyword("As").ContinueWithIdentifier("typeName"))
-                            .ContinueWithOperator("=")
-                            .ContinueWithExpression("v") // TODO: capture comment
+                            .ContinueWithMany("b",
+                                g => g.ContinueWithIdentifier("id")
+                                        .ContinueWithOptionalGroup(g2 => g2.ContinueWithKeyword("As").ContinueWithIdentifier("typeName"))
+                                        .ContinueWithOperator("=")
+                                        .ContinueWithExpression("v"),
+                                ",",
+                                s =>
+                                {
+                                    var cd = new ConstantDeclaration();
+
+                                    ITypeReference elemType = null;
+                                    cd.Name = s.Captures["id"].ToString();
+
+                                    if (cd.Name.Last().IsTypeSuffix())
+                                    {
+                                        elemType = cd.Name.Last().TypeFromSuffix();
+                                        cd.Name = cd.Name.Substring(0, cd.Name.Length - 1);
+                                    }
+                                    else if (s.Captures.TryGetValue("typeName", out var tn))
+                                    {
+                                        var t = tn.ToString();
+                                        elemType = t.TypeFromName() ?? new UnknownType(t);
+                                    }
+                                    cd.Type = elemType;
+
+                                    cd.Value = (Expression)s.Captures["v"];
+
+                                    return cd;
+                                })
+                            // TODO: capture comment
                             .ToMatcher<ModuleBase>((s, mb) =>
                             {
-                                var cd = new ConstantDeclaration();
-                                cd.IsPublic = s.Captures.TryGetValue("isPublic", out var b) ? true.Equals(b) : (bool?)null;
+                                var isPublic = s.Captures.TryGetValue("isPublic", out var b) ? true.Equals(b) : (bool?)null;
 
-                                ITypeReference elemType = null;
-                                cd.Name = s.Captures["id"].ToString();
-
-                                if (cd.Name.Last().IsTypeSuffix())
+                                foreach (var cd in (IEnumerable<ConstantDeclaration>)s.Captures["b"])
                                 {
-                                    elemType = cd.Name.Last().TypeFromSuffix();
-                                    cd.Name = cd.Name.Substring(0, cd.Name.Length - 1);
+                                    cd.IsPublic = isPublic;
+
+                                    mb.Declarations.Add(cd);
                                 }
-                                else if (s.Captures.TryGetValue("typeName", out var tn))
-                                {
-                                    var t = tn.ToString();
-                                    elemType = t.TypeFromName() ?? new UnknownType(t);
-                                }
-
-                                //cd.Type = s.Captures.ContainsKey("isArray") ? new ArrayType(elemType ?? VB6Types.Variant) : elemType;
-                                cd.Type = elemType;
-
-                                cd.Value = (Expression)s.Captures["v"];
-
-                                mb.Declarations.Add(cd);
                             }));
 
         #endregion ConstMatcher

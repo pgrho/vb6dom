@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -205,6 +207,71 @@ namespace Shipwreck.VB6Models.Parsing
             configuration(g);
 
             return group.AddItem(new TokenMatcherQuantitizer(g, minimum, maximum));
+        }
+
+        public static TGroup ContinueWithMany<TGroup, T>(
+            this ITokenMatcherItemGroup<TGroup> group,
+            string captureName,
+            Action<TokenMatcherGroup> configuration,
+            string separator,
+            Func<TokenMatcherState, T> captureConversion,
+            int minimum = 1,
+            int maximum = int.MaxValue)
+            where T : class
+            => group.ContinueWithMany(
+                        captureName,
+                        configuration,
+                        new TokenMatcherItem(null, null, TokenType.Operator, new Regex("^" + Regex.Escape(separator) + "$")),
+                        captureConversion,
+                        minimum,
+                        maximum);
+
+        public static TGroup ContinueWithMany<TGroup, T>(
+            this ITokenMatcherItemGroup<TGroup> group,
+            string captureName,
+            Action<TokenMatcherGroup> configuration,
+            TokenMatcherItemBase separator,
+            Func<TokenMatcherState, T> captureConversion,
+            int minimum = 1,
+            int maximum = int.MaxValue)
+            where T : class
+        {
+            var firstKey = captureName + "." + nameof(TokenMatcherHelper) + "." + nameof(ContinueWithMany) + ".firstCapture";
+
+            var fg = new TokenMatcherGroup(firstKey, captureConversion);
+            configuration(fg);
+
+            var ig = new TokenMatcherGroup(captureName, captureConversion);
+            ig.AddItem(separator);
+            configuration(ig);
+
+            var igq = new TokenMatcherQuantitizer(ig, Math.Max(0, minimum - 1), maximum < int.MaxValue ? maximum - 1 : int.MaxValue);
+
+            var g = new TokenMatcherGroup(captureName, (Func<TokenMatcherState, List<T>>)(s =>
+            {
+                var f = s.Captures.TryGetValue(firstKey, out var fv) ? fv as T : null;
+                var l = s.Captures.TryGetValue(captureName, out var lv) ? lv as IEnumerable : null;
+
+                if (f == null)
+                {
+                    return l.Cast<T>().ToList();
+                }
+
+                if (l != null)
+                {
+                    var nl = new List<T>() { f };
+                    nl.AddRange(l.Cast<T>());
+                    return nl;
+                }
+                else
+                {
+                    return new List<T>(1) { f };
+                }
+            }));
+
+            g.AddItem(fg).AddItem(igq);
+
+            return group.AddItem(g);
         }
 
         #endregion ContinueWithMany
