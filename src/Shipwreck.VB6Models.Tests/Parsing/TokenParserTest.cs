@@ -6,6 +6,8 @@ using Xunit.Sdk;
 
 namespace Shipwreck.VB6Models.Parsing
 {
+    using static TokenFactory;
+
     public class TokenParserTest
     {
         #region Unit
@@ -120,36 +122,6 @@ namespace Shipwreck.VB6Models.Parsing
         #endregion Declaration
 
         #region Common
-
-        private Token ID(string text)
-            => TOKEN(TokenType.Identifier, text);
-
-        private Token KW(string text)
-            => TOKEN(TokenType.Keyword, text);
-
-        private Token OP(string text)
-            => TOKEN(TokenType.Operator, text);
-
-        private Token ST(string text)
-            => TOKEN(TokenType.String, text);
-
-        private Token IN(string text)
-            => TOKEN(TokenType.Integer, text);
-
-        private Token FL(string text)
-            => TOKEN(TokenType.Float, text);
-
-        private Token BL(string text)
-            => TOKEN(TokenType.Boolean, text);
-
-        private Token UU(string text)
-            => TOKEN(TokenType.Guid, text);
-
-        private Token CM(string text)
-            => TOKEN(TokenType.Comment, text);
-
-        private Token TOKEN(TokenType type, string text)
-            => new Token(type, -1, -1, text);
 
         private void AssertTokens(string source, params Token[] tokens)
         {

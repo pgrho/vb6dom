@@ -10,6 +10,11 @@ namespace Shipwreck.VB6Models.Parsing
 
         private static StandardModule Module1 => _Module1 ?? (_Module1 = Assert.IsType<StandardModule>(new SourceFileReader("Parsing\\module1.bas").Load()));
 
+        #region ConstMatcher
+
+
+        #endregion
+
         #region Const
 
         [Fact]

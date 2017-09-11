@@ -14,6 +14,7 @@ namespace Shipwreck.VB6Models.Parsing
             : base(captureName)
         {
             _Items = new List<TokenMatcherItemBase>();
+            _CaptureConversion = captureConversion;
         }
 
         public TokenMatcherGroup AddItem(TokenMatcherItemBase item)
