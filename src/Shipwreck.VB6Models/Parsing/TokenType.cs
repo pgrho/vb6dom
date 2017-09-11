@@ -15,6 +15,9 @@ namespace Shipwreck.VB6Models.Parsing
         // promoted from identifier
 
         Boolean = 1 << 8,
-        Keyword = 1 << 9
+        Keyword = 1 << 9,
+
+
+        Value = Boolean | Integer | Float | Date | String
     }
 }

@@ -10,6 +10,55 @@ namespace Shipwreck.VB6Models.Parsing
     {
         private readonly ModuleBase _Module;
 
+        #region ConstMatcher
+
+        private static TokenMatcher<ModuleBase> _ConstMatcher;
+
+        internal static TokenMatcher<ModuleBase> ConstMatcher
+            => _ConstMatcher
+            ?? (_ConstMatcher
+                    = new TokenMatcherBuilder()
+                            .ContinueWithOptionalKeyword("isPublic", t => t.Text[1] == 'u' || t.Text[1] == 'U', "Public", "Private")
+                            .ContinueWithKeyword("Const")
+                            .ContinueWithIdentifier("id")
+                            .ContinueWithOptionalGroup("isArray", g => g.ContinueWithOperator("(").ContinueWithOperator(")"))
+                            .ContinueWithOptionalGroup(g => g.ContinueWithKeyword("As").ContinueWithIdentifier("typeName"))
+                            .ContinueWithOperator("=")
+                            .ContinueWithOptionalOperator("vOp", new[] { "-", "+" })
+                            .ContinueWithValue("v")
+                            .ToMatcher<ModuleBase>((s, mb) =>
+                            {
+                                var cd = new ConstantDeclaration();
+                                cd.IsPublic = s.Captures.TryGetValue("isPublic", out var b) ? true.Equals(b) : (bool?)null;
+
+                                ITypeReference elemType = null;
+                                cd.Name = s.Captures["id"].ToString();
+
+                                if (cd.Name.Last().IsTypeSuffix())
+                                {
+                                    elemType = cd.Name.Last().TypeFromSuffix();
+                                    cd.Name = cd.Name.Substring(0, cd.Name.Length - 1);
+                                }
+                                else if (s.Captures.TryGetValue("typeName", out var tn))
+                                {
+                                    var t = tn.ToString();
+                                    elemType = t.TypeFromName() ?? new UnknownType(t);
+                                }
+
+                                cd.Type = s.Captures.ContainsKey("isArray") ? new ArrayType(elemType ?? VB6Types.Variant) : elemType;
+
+                                var v = s.Captures["v"];
+                                if (s.Captures.TryGetValue("vOp", out var vop) && "-".Equals(vop))
+                                {
+                                    v = v.Negate();
+                                }
+                                cd.Value = new ConstantExpression(v);
+
+                                mb.Declarations.Add(cd);
+                            }));
+
+        #endregion ConstMatcher
+
         public ModuleReadingState(ModuleBase module)
         {
             _Module = module;
@@ -47,6 +96,10 @@ namespace Shipwreck.VB6Models.Parsing
                     }
                     else if (tokens.Any(t => t.Type == TokenType.Keyword && t.Text.EqualsIgnoreCase("Sub", "Function", "Property")))
                     {
+                    }
+                    else if (ConstMatcher.TryMatch(tokens, _Module))
+                    {
+                        return true;
                     }
                     else if (TryCreateConstantDeclaration(tokens, out var cd))
                     {
