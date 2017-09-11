@@ -201,12 +201,14 @@ namespace Shipwreck.VB6Models.Parsing
         public void Module1Test_Dim1()
         {
             var cnst = Module1.Declarations.OfType<FieldDeclaration>().Single(c => c.Name == "var1");
+            Assert.True(cnst.IsPublic);
         }
 
         [Fact]
         public void Module1Test_Dim2()
         {
             var cnst = Module1.Declarations.OfType<FieldDeclaration>().Single(c => c.Name == "var2");
+            Assert.False(cnst.IsPublic);
         }
 
         [Fact]
@@ -219,12 +221,14 @@ namespace Shipwreck.VB6Models.Parsing
         public void Module1Test_Dim4()
         {
             var cnst = Module1.Declarations.OfType<FieldDeclaration>().Single(c => c.Name == "var4");
+            Assert.Equal(VB6Types.Single, cnst.Type);
         }
 
         [Fact]
         public void Module1Test_Dim5()
         {
             var cnst = Module1.Declarations.OfType<FieldDeclaration>().Single(c => c.Name == "var5");
+            Assert.Equal(VB6Types.String, cnst.Type);
         }
 
         [Fact]
@@ -244,8 +248,10 @@ namespace Shipwreck.VB6Models.Parsing
         {
             var v1 = Module1.Declarations.OfType<FieldDeclaration>().Single(c => c.Name == "var8_1");
             var v2 = Module1.Declarations.OfType<FieldDeclaration>().Single(c => c.Name == "var8_2");
+            Assert.Equal(VB6Types.Currency, v2.Type);
             var v3 = Module1.Declarations.OfType<FieldDeclaration>().Single(c => c.Name == "var8_3");
             var v4 = Module1.Declarations.OfType<FieldDeclaration>().Single(c => c.Name == "var8_4");
+            Assert.Equal(VB6Types.Integer, v4.Type);
         }
 
         #endregion Dim

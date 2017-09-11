@@ -64,6 +64,57 @@ namespace Shipwreck.VB6Models.Parsing
 
         #endregion ConstMatcher
 
+        #region FieldMatcher
+
+        private static TokenMatcher<ModuleBase> _FieldMatcher;
+
+        internal static TokenMatcher<ModuleBase> FieldMatcher
+            => _FieldMatcher
+            ?? (_FieldMatcher
+                    = new TokenMatcherBuilder()
+                            .ContinueWithKeyword("isPublic", t => t.Text[1] == 'u' || t.Text[1] == 'U', "Public", "Private", "Dim")
+                            .ContinueWithMany("b",
+                                g => g.ContinueWithIdentifier("id")
+                                        .ContinueWithOptionalGroup("isArray", g2 => g2.ContinueWithOperator("(").ContinueWithOperator(")"))
+                                        .ContinueWithOptionalGroup(g2 => g2.ContinueWithKeyword("As").ContinueWithIdentifier("typeName")),
+                                ",",
+                                s =>
+                                {
+                                    var cd = new FieldDeclaration();
+
+                                    ITypeReference elemType = null;
+                                    cd.Name = s.Captures["id"].ToString();
+
+                                    if (cd.Name.Last().IsTypeSuffix())
+                                    {
+                                        elemType = cd.Name.Last().TypeFromSuffix();
+                                        cd.Name = cd.Name.Substring(0, cd.Name.Length - 1);
+                                    }
+                                    else if (s.Captures.TryGetValue("typeName", out var tn))
+                                    {
+                                        var t = tn.ToString();
+                                        elemType = t.TypeFromName() ?? new UnknownType(t);
+                                    }
+                                    var isArray = s.Captures.ContainsKey("isArray");
+                                    cd.Type = isArray ? new ArrayType(elemType ?? VB6Types.Variant) : elemType;
+
+                                    return cd;
+                                })
+                            // TODO: capture comment
+                            .ToMatcher<ModuleBase>((s, mb) =>
+                            {
+                                var isPublic = s.Captures.TryGetValue("isPublic", out var b) ? true.Equals(b) : (bool?)null;
+
+                                foreach (var cd in (IEnumerable<FieldDeclaration>)s.Captures["b"])
+                                {
+                                    cd.IsPublic = isPublic;
+
+                                    mb.Declarations.Add(cd);
+                                }
+                            }));
+
+        #endregion FieldMatcher
+
         public ModuleReadingState(ModuleBase module)
         {
             _Module = module;
@@ -102,29 +153,10 @@ namespace Shipwreck.VB6Models.Parsing
                     else if (tokens.Any(t => t.Type == TokenType.Keyword && t.Text.EqualsIgnoreCase("Sub", "Function", "Property")))
                     {
                     }
-                    else if (ConstMatcher.TryMatch(tokens, _Module))
+                    else if (ConstMatcher.TryMatch(tokens, _Module)
+                            || FieldMatcher.TryMatch(tokens, _Module))
                     {
                         return true;
-                    }
-                    else if (ft.IsKeywordOf("Public") || ft.IsKeywordOf("Private") || ft.IsKeywordOf("Dim"))
-                    {
-                        var i = 1;
-                        if (TryReadParameters(tokens, ref i, false, out var ps))
-                        {
-                            var isPublic = char.ToLowerInvariant(ft.Text[1]) == 'u';
-
-                            foreach (var p in ps)
-                            {
-                                _Module.Declarations.Add(new FieldDeclaration()
-                                {
-                                    IsPublic = isPublic,
-                                    Name = p.Name,
-                                    Type = p.ParameterType
-                                });
-                            }
-
-                            return true;
-                        }
                     }
 
                     break;
@@ -140,101 +172,6 @@ namespace Shipwreck.VB6Models.Parsing
             reader.OnUnknownTokens(this, tokens);
 
             return true;
-        }
-
-        private bool TryReadParameters(IReadOnlyList<Token> tokens, ref int index, bool allowBy, out List<ParameterDeclaration> parameters)
-        {
-            var i = index;
-            List<ParameterDeclaration> ret = null;
-            var last = index;
-
-            for (; ; )
-            {
-                // (ByVal|ByRef)? id\{suffix} (\(...........\))? (As TypeName)?
-
-                bool? isByRef = null;
-                string name;
-
-                var id = tokens.ElementAtOrDefault(i);
-
-                if (allowBy && (id?.IsKeywordOf("ByVal") ?? id?.IsKeywordOf("ByRef") ?? false))
-                {
-                    isByRef = char.ToLower(id.Text[2]) == 'r';
-                    id = tokens.ElementAtOrDefault(++i);
-                }
-
-                if (id?.Type != TokenType.Identifier)
-                {
-                    break;
-                }
-
-                ITypeReference elemType = null;
-
-                if (id.Text.Last().IsTypeSuffix())
-                {
-                    name = id.Text.Substring(0, id.Text.Length - 1);
-                    elemType = id.Text.Last().TypeFromSuffix();
-                }
-                else
-                {
-                    name = id.Text;
-                }
-
-                var isArray = false;
-
-                var comma = tokens.ElementAtOrDefault(++i);
-                if (comma.IsOperatorOf("("))
-                {
-                    // TODO: array dimension
-                    var next = tokens.ElementAtOrDefault(++i);
-                    if (next.IsOperatorOf(")"))
-                    {
-                        isArray = true;
-                        comma = tokens.ElementAtOrDefault(++i);
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-
-                if (elemType == null && comma.IsKeywordOf("As"))
-                {
-                    var typeName = tokens.ElementAtOrDefault(++i);
-                    if (typeName?.Type == TokenType.Identifier)
-                    {
-                        elemType = typeName.Text.TypeFromName() ?? new UnknownType(typeName.Text);
-                        comma = tokens.ElementAtOrDefault(++i);
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-
-                (ret ?? (ret = new List<ParameterDeclaration>())).Add(new ParameterDeclaration()
-                {
-                    IsByRef = isByRef,
-                    Name = name,
-                    ParameterType = isArray ? new ArrayType(elemType ?? VB6Types.Variant) : elemType
-                });
-                last = i - 1;
-
-                if (comma.IsOperatorOf(","))
-                {
-                    i++;
-                    continue;
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            parameters = ret;
-            index = last;
-
-            return ret != null;
         }
     }
 }
