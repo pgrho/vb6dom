@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Shipwreck.VB6Models.Parsing
@@ -26,6 +27,7 @@ namespace Shipwreck.VB6Models.Parsing
         internal override IEnumerable<TokenMatcherState> EnumerateMatches(TokenMatcherState state)
         {
             var s = new TokenMatcherState(state.Tokens);
+            s.Index = state.Index;
 
             var ens = new Stack<IEnumerator<TokenMatcherState>>();
             var indexes = new Stack<int>();
@@ -42,6 +44,11 @@ namespace Shipwreck.VB6Models.Parsing
                     if (ens.Count == _Items.Count)
                     {
                         state.Index = p.Current.Index;
+
+                        foreach (var kv in p.Current.Captures)
+                        {
+                            state.Captures[kv.Key] = kv.Value;
+                        }
 
                         if (CaptureName != null)
                         {
@@ -62,6 +69,16 @@ namespace Shipwreck.VB6Models.Parsing
                     ens.Pop();
                 }
             }
+        }
+
+        public override void WriteTo(TextWriter writer)
+        {
+            writer.Write('(');
+            foreach (var item in _Items)
+            {
+                item.WriteTo(writer);
+            }
+            writer.Write(')');
         }
     }
 }

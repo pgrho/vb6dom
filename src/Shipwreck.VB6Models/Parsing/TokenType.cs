@@ -1,5 +1,8 @@
+using System;
+
 namespace Shipwreck.VB6Models.Parsing
 {
+    [Flags]
     public enum TokenType
     {
         Default,

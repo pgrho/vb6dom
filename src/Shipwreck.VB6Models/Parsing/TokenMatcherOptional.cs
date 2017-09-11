@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 
 namespace Shipwreck.VB6Models.Parsing
 {
@@ -26,6 +27,12 @@ namespace Shipwreck.VB6Models.Parsing
                 state.Captures.Remove(_InternalItem.CaptureName);
             }
             yield return state;
+        }
+        public override void WriteTo(TextWriter writer)
+        {
+            writer.Write('(');
+            _InternalItem.WriteTo(writer);
+            writer.Write(")?");
         }
     }
 }

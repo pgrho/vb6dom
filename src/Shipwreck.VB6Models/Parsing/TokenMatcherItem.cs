@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -35,6 +36,28 @@ namespace Shipwreck.VB6Models.Parsing
                     state.Captures[CaptureName] = _CaptureConversion == null ? t.Text : _CaptureConversion.DynamicInvoke(t);
                 }
                 yield return state;
+            }
+        }
+
+        public override void WriteTo(TextWriter writer)
+        {
+            writer.Write('(');
+            if (CaptureName != null)
+            {
+                writer.Write("?<");
+                writer.Write(CaptureName);
+                writer.Write('>');
+            }
+            if (_TextPattern != null)
+            {
+                writer.Write(_TextPattern);
+            }
+            writer.Write(')');
+            if (_TypeMask != TokenType.Default)
+            {
+                writer.Write('{');
+                writer.Write(_TypeMask.ToString("G"));
+                writer.Write('}');
             }
         }
     }

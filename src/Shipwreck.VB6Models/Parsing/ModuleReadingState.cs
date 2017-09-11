@@ -21,11 +21,11 @@ namespace Shipwreck.VB6Models.Parsing
                             .ContinueWithOptionalKeyword("isPublic", t => t.Text[1] == 'u' || t.Text[1] == 'U', "Public", "Private")
                             .ContinueWithKeyword("Const")
                             .ContinueWithIdentifier("id")
-                            .ContinueWithOptionalGroup("isArray", g => g.ContinueWithOperator("(").ContinueWithOperator(")"))
+                            //.ContinueWithOptionalGroup("isArray", g => g.ContinueWithOperator("(").ContinueWithOperator(")"))
                             .ContinueWithOptionalGroup(g => g.ContinueWithKeyword("As").ContinueWithIdentifier("typeName"))
                             .ContinueWithOperator("=")
-                            .ContinueWithOptionalOperator("vOp", new[] { "-", "+" })
-                            .ContinueWithValue("v")
+                            .ContinueWithOptionalOperator("vOp", new[] { "-", "+" }) // TODO: capture general expression
+                            .ContinueWithValue("v") // TODO: capture comment
                             .ToMatcher<ModuleBase>((s, mb) =>
                             {
                                 var cd = new ConstantDeclaration();
@@ -45,7 +45,8 @@ namespace Shipwreck.VB6Models.Parsing
                                     elemType = t.TypeFromName() ?? new UnknownType(t);
                                 }
 
-                                cd.Type = s.Captures.ContainsKey("isArray") ? new ArrayType(elemType ?? VB6Types.Variant) : elemType;
+                                //cd.Type = s.Captures.ContainsKey("isArray") ? new ArrayType(elemType ?? VB6Types.Variant) : elemType;
+                                cd.Type = elemType;
 
                                 var v = s.Captures["v"];
                                 if (s.Captures.TryGetValue("vOp", out var vop) && "-".Equals(vop))
@@ -101,13 +102,6 @@ namespace Shipwreck.VB6Models.Parsing
                     {
                         return true;
                     }
-                    else if (TryCreateConstantDeclaration(tokens, out var cd))
-                    {
-                        // TODO: split by comma
-                        _Module.Declarations.Add(cd);
-
-                        return true;
-                    }
                     else if (ft.IsKeywordOf("Public") || ft.IsKeywordOf("Private") || ft.IsKeywordOf("Dim"))
                     {
                         var i = 1;
@@ -142,60 +136,6 @@ namespace Shipwreck.VB6Models.Parsing
             reader.OnUnknownTokens(this, tokens);
 
             return true;
-        }
-
-        private bool TryCreateConstantDeclaration(IReadOnlyList<Token> tokens, out ConstantDeclaration constantDeclaration)
-        {
-            var ft = tokens.First();
-
-            if (tokens.Count < 4 && !tokens.Any(t => t.IsKeywordOf("Const")))
-            {
-                constantDeclaration = null;
-                return false;
-            }
-            constantDeclaration = new ConstantDeclaration();
-            constantDeclaration.IsPublic = ft.IsKeywordOf("Public") ? true
-                                        : ft.IsKeywordOf("Private") ? false
-                                        : (bool?)null;
-
-            var i = constantDeclaration.IsPublic == null ? 0 : 1;
-
-            if (!tokens[i++].IsKeywordOf("Const"))
-            {
-                constantDeclaration = null;
-                return false;
-            }
-
-            if (TryReadParameters(tokens, ref i, false, out var ps)
-                && ps.Count == 1)
-            {
-                constantDeclaration.Name = ps[0].Name;
-                constantDeclaration.Type = ps[0].ParameterType;
-
-                var eq = tokens.ElementAtOrDefault(++i);
-
-                if (eq.IsOperatorOf("=")
-                    && i + 2 <= tokens.Count
-                    && i + 3 >= tokens.Count)
-                {
-                    var vt = tokens[i + 1];
-
-                    if (vt.IsOperatorOf("-")
-                        && i + 3 == tokens.Count)
-                    {
-                        constantDeclaration.Value = new ConstantExpression(tokens[i + 2].GetValue().Negate());
-                    }
-                    else if (i + 2 == tokens.Count)
-                    {
-                        constantDeclaration.Value = new ConstantExpression(vt.GetValue());
-                    }
-
-                    return true;
-                }
-            }
-
-            constantDeclaration = null;
-            return false;
         }
 
         private bool TryReadParameters(IReadOnlyList<Token> tokens, ref int index, bool allowBy, out List<ParameterDeclaration> parameters)

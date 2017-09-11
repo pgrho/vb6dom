@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Shipwreck.VB6Models.Parsing
@@ -85,6 +86,23 @@ namespace Shipwreck.VB6Models.Parsing
                     }
                 }
             }
+        }
+
+        public override void WriteTo(TextWriter writer)
+        {
+            writer.Write('(');
+            _InternalItem.WriteTo(writer);
+            writer.Write("){");
+            if (_Minimum > 0)
+            {
+                writer.Write(_Minimum);
+            }
+            writer.Write(',');
+            if (_Maximum < int.MaxValue)
+            {
+                writer.Write(_Maximum);
+            }
+            writer.Write('}');
         }
     }
 }

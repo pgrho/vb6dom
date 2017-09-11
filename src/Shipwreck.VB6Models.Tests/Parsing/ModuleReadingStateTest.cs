@@ -4,6 +4,8 @@ using Xunit;
 
 namespace Shipwreck.VB6Models.Parsing
 {
+    using static TokenFactory;
+
     public class ModuleReadingStateTest
     {
         private static StandardModule _Module1;
@@ -12,8 +14,78 @@ namespace Shipwreck.VB6Models.Parsing
 
         #region ConstMatcher
 
+        [Fact]
+        public void Const1Test()
+        {
+            var sm = new StandardModule();
 
-        #endregion
+            Assert.True(ModuleReadingState.ConstMatcher.TryMatch(new[] { KW("Const"), ID("const1"), OP("="), IN("1") }, sm));
+            var c = Assert.IsType<ConstantDeclaration>(sm.Declarations.Single());
+
+            Assert.Null(c.IsPublic);
+            Assert.Equal("const1", c.Name);
+            Assert.Null(c.Type);
+        }
+
+        [Fact]
+        public void Const2Test()
+        {
+            var sm = new StandardModule();
+
+            Assert.True(ModuleReadingState.ConstMatcher.TryMatch(new[] { KW("Private"), KW("Const"), ID("const2"), OP("="), IN("2") }, sm));
+            var c = Assert.IsType<ConstantDeclaration>(sm.Declarations.Single());
+
+            Assert.False(c.IsPublic);
+            Assert.Equal("const2", c.Name);
+            Assert.Null(c.Type);
+        }
+
+        [Fact]
+        public void Const3Test()
+        {
+            var sm = new StandardModule();
+
+            Assert.True(ModuleReadingState.ConstMatcher.TryMatch(new[] { KW("Public"), KW("Const"), ID("const3"), OP("="), IN("2") }, sm));
+            var c = Assert.IsType<ConstantDeclaration>(sm.Declarations.Single());
+
+            Assert.True(c.IsPublic);
+            Assert.Equal("const3", c.Name);
+            Assert.Null(c.Type);
+        }
+
+        [Fact]
+        public void Const4Test()
+        {
+            var sm = new StandardModule();
+
+            Assert.True(ModuleReadingState.ConstMatcher.TryMatch(new[] { KW("Const"), ID("const4&"), OP("="), IN("2") }, sm));
+            var c = Assert.IsType<ConstantDeclaration>(sm.Declarations.Single());
+
+            Assert.Null(c.IsPublic);
+            Assert.Equal("const4", c.Name);
+            Assert.Equal(VB6Types.Long, c.Type);
+        }
+
+        [Fact]
+        public void Const5Test()
+        {
+            var sm = new StandardModule();
+
+            Assert.True(ModuleReadingState.ConstMatcher.TryMatch(new[] { KW("Const"), ID("const5"), KW("As"), ID("Double"), OP("="), IN("2") }, sm));
+            var c = Assert.IsType<ConstantDeclaration>(sm.Declarations.Single());
+
+            Assert.Null(c.IsPublic);
+            Assert.Equal("const5", c.Name);
+            Assert.Equal(VB6Types.Double, c.Type);
+        }
+
+        /*
+Const const5 As Double = 5
+Const const6 As Integer = -6
+
+             */
+
+        #endregion ConstMatcher
 
         #region Const
 
