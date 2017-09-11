@@ -41,18 +41,21 @@ namespace Shipwreck.VB6Models.Parsing
 
         public override void WriteTo(TextWriter writer)
         {
-            writer.Write('(');
-            if (CaptureName != null)
+            if (CaptureName != null || _TextPattern != null)
             {
-                writer.Write("?<");
-                writer.Write(CaptureName);
-                writer.Write('>');
+                writer.Write('(');
+                if (CaptureName != null)
+                {
+                    writer.Write("?<");
+                    writer.Write(CaptureName);
+                    writer.Write('>');
+                }
+                if (_TextPattern != null)
+                {
+                    writer.Write(_TextPattern);
+                }
+                writer.Write(')');
             }
-            if (_TextPattern != null)
-            {
-                writer.Write(_TextPattern);
-            }
-            writer.Write(')');
             if (_TypeMask != TokenType.Default)
             {
                 writer.Write('{');

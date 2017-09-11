@@ -24,8 +24,7 @@ namespace Shipwreck.VB6Models.Parsing
                             //.ContinueWithOptionalGroup("isArray", g => g.ContinueWithOperator("(").ContinueWithOperator(")"))
                             .ContinueWithOptionalGroup(g => g.ContinueWithKeyword("As").ContinueWithIdentifier("typeName"))
                             .ContinueWithOperator("=")
-                            .ContinueWithOptionalOperator("vOp", new[] { "-", "+" }) // TODO: capture general expression
-                            .ContinueWithValue("v") // TODO: capture comment
+                            .ContinueWithExpression("v") // TODO: capture comment
                             .ToMatcher<ModuleBase>((s, mb) =>
                             {
                                 var cd = new ConstantDeclaration();
@@ -48,12 +47,7 @@ namespace Shipwreck.VB6Models.Parsing
                                 //cd.Type = s.Captures.ContainsKey("isArray") ? new ArrayType(elemType ?? VB6Types.Variant) : elemType;
                                 cd.Type = elemType;
 
-                                var v = s.Captures["v"];
-                                if (s.Captures.TryGetValue("vOp", out var vop) && "-".Equals(vop))
-                                {
-                                    v = v.Negate();
-                                }
-                                cd.Value = new ConstantExpression(v);
+                                cd.Value = (Expression)s.Captures["v"];
 
                                 mb.Declarations.Add(cd);
                             }));

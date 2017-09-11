@@ -69,6 +69,9 @@ namespace Shipwreck.VB6Models.Parsing
         public static TGroup ContinueWithValue<TGroup>(this ITokenMatcherItemGroup<TGroup> group, string captureName)
             => group.ContinueWith(captureName, t => t.GetValue(), TokenType.Value, null);
 
+        public static TGroup ContinueWithExpression<TGroup>(this ITokenMatcherItemGroup<TGroup> group, string captureName)
+            => group.AddItem(new TokenMatcherExpressionItem(captureName));
+
         #endregion With TokenType
 
         #endregion ContinueWith

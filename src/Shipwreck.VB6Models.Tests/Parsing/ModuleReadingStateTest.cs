@@ -79,11 +79,18 @@ namespace Shipwreck.VB6Models.Parsing
             Assert.Equal(VB6Types.Double, c.Type);
         }
 
-        /*
-Const const5 As Double = 5
-Const const6 As Integer = -6
+        [Fact]
+        public void Const6Test()
+        {
+            var sm = new StandardModule();
 
-             */
+            Assert.True(ModuleReadingState.ConstMatcher.TryMatch(new[] { KW("Const"), ID("const6"), KW("As"), ID("Integer"), OP("="), OP("-"), IN("6") }, sm));
+            var c = Assert.IsType<ConstantDeclaration>(sm.Declarations.Single());
+
+            Assert.Null(c.IsPublic);
+            Assert.Equal("const6", c.Name);
+            Assert.Equal(VB6Types.Integer, c.Type);
+        }
 
         #endregion ConstMatcher
 
